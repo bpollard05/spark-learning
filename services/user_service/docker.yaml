@@ -1,0 +1,61 @@
+# =====================================================
+# FILE: Dockerfile
+# LOCATION: In EACH service folder 
+# (services/user_service/Dockerfile, services/ai_orchestrator/Dockerfile, etc.)
+# COPY THIS SAME FILE TO ALL SERVICE FOLDERS
+# =====================================================
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Expose port (change this for each service)
+# User Service: 8001, AI Orchestrator: 8002, Study Buddy: 8003, etc.
+EXPOSE 8001
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8001/health || exit 1
+
+# Run application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+
+# =====================================================
+# FILE: requirements.txt
+# LOCATION: Root directory AND in each service folder
+# =====================================================
+
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+pydantic==2.5.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+anthropic==0.7.0
+redis==5.0.1
+numpy==1.26.2
+boto3==1.29.0
+requests==2.31.0
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+httpx==0.25.1
+alembic==1.12.1
